@@ -14,7 +14,7 @@ import (
 
 // GetSeriesHtml sends a request to MAL to get the current season page.
 // HTML is parsed to pull series titles and descriptions.
-// It returns a Slice of type models.Series struct
+// Returns a Slice of type models.Series struct
 func GetSeriesHtml() []models.Series {
 	seriesData := make([]models.Series, 0)
 
@@ -49,6 +49,9 @@ func GetSeriesHtml() []models.Series {
 	return seriesData
 }
 
+// GetSeriesDownloadLink sends a request to nyaa.si with a [title] to query.
+// HTML is parsed to pull "successful" torrents as well as their associated magnet links.
+// Returns a map of torrent file name to magnet link.
 func GetSeriesDownloadLink(title string) map[string]string {
 	retVal := make(map[string]string)
 	const queryUri string = "https://nyaa.si/?f=0&c=0_0&q="
@@ -75,6 +78,9 @@ func GetSeriesDownloadLink(title string) map[string]string {
 	return retVal
 }
 
+// OpenMagnet takes a string representation of a magnet link and opens it with the OS's default handler.
+// Returns an error if there's an issue opening the file or if platform is not supported.
+// Otherwise returns nil
 func OpenMagnet(magnetLink string) error {
 	var err error = nil
 	switch runtime.GOOS {
