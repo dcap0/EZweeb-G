@@ -1,14 +1,20 @@
 package logic
 
 import (
+	"errors"
 	"log"
 	"net/http"
+	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dcap0/EZ-weeb-G/pkg/models"
 )
 
+// GetSeriesHtml sends a request to MAL to get the current season page.
+// HTML is parsed to pull series titles and descriptions.
+// It returns a Slice of type models.Series struct
 func GetSeriesHtml() []models.Series {
 	seriesData := make([]models.Series, 0)
 
@@ -67,4 +73,20 @@ func GetSeriesDownloadLink(title string) map[string]string {
 	})
 
 	return retVal
+}
+
+func OpenMagnet(magnetLink string) error {
+	var err error = nil
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", magnetLink).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", magnetLink).Start()
+	case "darwin":
+		err = exec.Command("open", magnetLink).Start()
+	default:
+		err = errors.New("Unsupported Platform")
+	}
+
+	return err
 }
