@@ -1,3 +1,4 @@
+// This package handles initializing TUI widgets and applying listeners to them.
 package tui
 
 import (
@@ -10,6 +11,8 @@ import (
 var yotsubatoColor = tcell.NewRGBColor(206, 230, 110)
 var yotsubatoCompliment = tcell.NewRGBColor(134, 110, 230)
 
+// InitUI takes a slice of Series structs,
+// builds UI around the data. and formats it.
 func InitUI(seriesData []models.Series) {
 	//Initialize Widgets
 	app := tview.NewApplication()
@@ -39,10 +42,14 @@ func InitUI(seriesData []models.Series) {
 
 	//listeners
 	showList.SetChangedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
+		//update description based on selected title.
 		descriptionText.Clear().SetText(seriesData[index].Description)
 	})
 
 	showList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// if enter is pressed on a title, it will clear the list
+		// and populate it with available torrent filenames
+		// stes focus on the download list
 		if event.Rune() == 13 { //enter key
 			populateDownloadList(
 				downloadList,
@@ -61,9 +68,24 @@ func InitUI(seriesData []models.Series) {
 			downloadMap := logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title)
 			err := logic.OpenMagnet(downloadMap[selectedTorrent])
 			if err != nil {
-				//make this a modal!
-				panic(err)
+				modal := messageModalInit("An error occurred while opening the magnet link:\n" + err.Error()).
+					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+						if buttonLabel == "OK" {
+							app.SetRoot(topFlex, false).SetFocus(showList)
+						}
+					})
+
+				app.SetRoot(modal, false).SetFocus(modal)
 			}
+
+			modal := messageModalInit("Opening Magnet Link:\n" + selectedTorrent).
+				SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+					if buttonLabel == "OK" {
+						app.SetRoot(topFlex, false).SetFocus(showList)
+					}
+				})
+
+			app.SetRoot(modal, false).SetFocus(modal)
 		}
 		return event
 	})
@@ -91,6 +113,7 @@ func InitUI(seriesData []models.Series) {
 	}
 }
 
+// descriptionTextInit returns a textview widget that has the application styles applied.
 func descriptionTextInit() *tview.TextView {
 	descriptionText := tview.
 		NewTextView().
@@ -104,6 +127,8 @@ func descriptionTextInit() *tview.TextView {
 	return descriptionText
 }
 
+// showListInit returns a list widget that has the application styles applied.
+// it populates the list with relevent series titles.
 func showListInit(seriesData []models.Series) *tview.List {
 	showList := tview.
 		NewList().
@@ -116,12 +141,14 @@ func showListInit(seriesData []models.Series) *tview.List {
 		SetBorder(true)
 
 	for _, show := range seriesData {
-		showList.AddItem(show.Title, "", rune(0), nil).SetShortcutColor(yotsubatoColor)
+		showList.AddItem(show.Title, "", rune(0), nil).
+			SetShortcutColor(yotsubatoColor)
 	}
 
 	return showList
 }
 
+// downloadListInit returns a list widget with application styles applied.
 func downloadListInit() *tview.List {
 	downloadList := tview.
 		NewList().
@@ -135,17 +162,23 @@ func downloadListInit() *tview.List {
 	return downloadList
 }
 
+// populateDownloadList takes the downloadList widget, clears it,
+// and populates it with torrent link names stored in downloadLinks
 func populateDownloadList(downloadList *tview.List, downloadLinks map[string]string) {
+	downloadList.Clear()
+
 	keys := make([]string, 0, len(downloadLinks))
 	for k := range downloadLinks {
 		keys = append(keys, k)
 	}
 
 	for _, linkTitle := range keys {
-		downloadList.AddItem(linkTitle, "", rune(0), nil)
+		downloadList.AddItem(linkTitle, "", rune(0), nil).
+			SetShortcutColor(yotsubatoColor)
 	}
 }
 
+// controlsViewInit returns a textview widget with application styles applied.
 func controlsViewInit() *tview.TextView {
 	controlsView := tview.NewTextView()
 
@@ -154,4 +187,15 @@ func controlsViewInit() *tview.TextView {
 		SetBackgroundColor(yotsubatoColor)
 
 	return controlsView
+}
+
+// messageModalInit returns a modal widget with the provided text.
+func messageModalInit(textContent string) *tview.Modal {
+	messageModal := tview.NewModal()
+
+	messageModal.SetBackgroundColor(yotsubatoColor).SetTextColor(yotsubatoCompliment)
+	messageModal.SetText(textContent)
+	messageModal.AddButtons([]string{"OK"})
+
+	return messageModal
 }
