@@ -7,6 +7,7 @@ package logic
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os/exec"
@@ -75,27 +76,36 @@ func GetSeriesDownloadLink(title string) map[string]string {
 		log.Fatal(err)
 	}
 
-	doc.Find(".success").First().Next()
+	failCounter := 0
 
-	// tdChild := s.Find("td").First().Next()
+	//get success files
+	doc.Find(".success").Each(func(i int, s *goquery.Selection) {
+		var fileName string
 
-	// var fileName string
-	// var children int
+		//Element holding filename is always the secondTD (colspan=2)
+		fileNameElement := s.Find("td").First().Next().Find("a")
 
-	// if tdChild.Children().Length() == 1 {
-	// 	fileName, _ = tdChild.First().Attr("title")
-	// 	children = tdChild.Children().Length()
-	// } else {
-	// 	fileName, _ = tdChild.First().Next().Attr("title")
-	// 	children = tdChild.Children().Length()
-	// }
+		//For whatever reason, nyaa puts the comment right next to the filename, instead of its own box.
+		switch fileNameElement.Length() {
+		case 1:
+			fileName = fileNameElement.First().Text()
+		case 2:
+			fileName = fileNameElement.First().Next().Text()
+		default:
+			failCounter++
+			fileName = "Failed to Find Filename: " + fmt.Sprint(failCounter)
+		}
 
-	// fmt.Printf("fileName: %v\n", strings.TrimSpace(fileName))
-	// fmt.Printf("children: %v\n", children)
-	// fmt.Println("~~~")
-	// href, _ := s.Find(".text-center").Find("a").Siblings().Attr("href")
-	// retVal[strings.TrimSpace(tTitle)] = href
+		//magnetLinks have a child
+		magnetLink, magnetLinkExists := s.Find(".fa-magnet").Parent().Attr("href")
 
+		if magnetLinkExists {
+			retVal[strings.TrimSpace(fileName)] = magnetLink
+		} else {
+			retVal[strings.TrimSpace(fileName)] = ""
+		}
+
+	})
 	return retVal
 }
 
@@ -103,7 +113,12 @@ func GetSeriesDownloadLink(title string) map[string]string {
 // Returns an error if there's an issue opening the file or if platform is not supported.
 // Otherwise returns nil
 func OpenMagnet(magnetLink string) error {
-	var err error = nil
+	var err error
+
+	if magnetLink == "" {
+		return errors.New("no magnet link found")
+	}
+
 	switch runtime.GOOS {
 	case "linux":
 		err = exec.Command("xdg-open", magnetLink).Start()
