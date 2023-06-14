@@ -2,6 +2,8 @@
 package tui
 
 import (
+	"fmt"
+
 	"github.com/dcap0/EZ-weeb-G/pkg/logic"
 	"github.com/dcap0/EZ-weeb-G/pkg/models"
 	"github.com/gdamore/tcell/v2"
@@ -67,6 +69,7 @@ func InitUI(seriesData []models.Series) {
 			selectedTorrent, _ := downloadList.GetItemText(downloadList.GetCurrentItem())
 			downloadMap := logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title)
 			err := logic.OpenMagnet(downloadMap[selectedTorrent])
+			fmt.Printf("err.Error(): %v\n", err.Error())
 			if err != nil {
 				modal := messageModalInit("An error occurred while opening the magnet link:\n" + err.Error()).
 					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
@@ -76,16 +79,17 @@ func InitUI(seriesData []models.Series) {
 					})
 
 				app.SetRoot(modal, false).SetFocus(modal)
+			} else {
+
+				modal := messageModalInit("Opening Magnet Link:\n" + selectedTorrent + ":" + err.Error()).
+					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+						if buttonLabel == "OK" {
+							app.SetRoot(topFlex, false).SetFocus(showList)
+						}
+					})
+
+				app.SetRoot(modal, false).SetFocus(modal)
 			}
-
-			modal := messageModalInit("Opening Magnet Link:\n" + selectedTorrent).
-				SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-					if buttonLabel == "OK" {
-						app.SetRoot(topFlex, false).SetFocus(showList)
-					}
-				})
-
-			app.SetRoot(modal, false).SetFocus(modal)
 		}
 		return event
 	})
