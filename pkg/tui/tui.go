@@ -2,6 +2,7 @@
 package tui
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/dcap0/EZ-weeb-G/pkg/logic"
@@ -12,6 +13,9 @@ import (
 
 var yotsubatoColor = tcell.NewRGBColor(206, 230, 110)
 var yotsubatoCompliment = tcell.NewRGBColor(134, 110, 230)
+
+const stringUpArrow string = string(rune(8593))
+const stringDownArrow string = string(rune(8595))
 
 // InitUI takes a slice of Series structs,
 // builds UI around the data. and formats it.
@@ -25,7 +29,7 @@ func InitUI(seriesData []models.Series) {
 
 	//Set startup content
 	descriptionText.Clear().SetText(seriesData[showList.GetCurrentItem()].Description)
-	controlsView.SetText("(Enter) Get Torrent Links\t\t(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit")
+	controlsView.SetText(fmt.Sprintf("(Enter) Get Torrent Links\t\t(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate", stringUpArrow, stringDownArrow))
 
 	//Set up Layout
 	sideFlex := tview.NewFlex().
@@ -99,13 +103,13 @@ func InitUI(seriesData []models.Series) {
 			app.Stop()
 		case 49: //1
 			app.SetFocus(showList)
-			controlsView.Clear().SetText("(Enter) Get Torrent Links\t\t(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit")
+			controlsView.Clear().SetText(fmt.Sprintf("(Enter) Get Torrent Links\t\t(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate", stringUpArrow, stringDownArrow))
 		case 50: //2
 			app.SetFocus(descriptionText)
-			controlsView.Clear().SetText("(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit")
+			controlsView.Clear().SetText(fmt.Sprintf("(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate", stringUpArrow, stringDownArrow))
 		case 51: //3
 			app.SetFocus(downloadList)
-			controlsView.Clear().SetText("(Enter) Download Selected Torrent\t\t(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit")
+			controlsView.Clear().SetText(fmt.Sprintf("(Enter) Download Selected Torrent\t\t(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate", stringUpArrow, stringDownArrow))
 		}
 		return event
 	})
