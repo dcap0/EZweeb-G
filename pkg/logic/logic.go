@@ -1,3 +1,8 @@
+// This package implements utility functions for
+// getting and handling data related to currently airing anime seasons.
+//
+// The package is used to get and parse HTML across several anime sites,
+// and to open associated magnet links.
 package logic
 
 import (
@@ -70,10 +75,26 @@ func GetSeriesDownloadLink(title string) map[string]string {
 		log.Fatal(err)
 	}
 
-	doc.Find(".success").Each(func(i int, s *goquery.Selection) {
-		href, _ := s.Find(".text-center").Find("a").Siblings().Attr("href")
-		retVal[strings.TrimSpace(s.Find("a").Text())] = href
-	})
+	doc.Find(".success").First().Next()
+
+	// tdChild := s.Find("td").First().Next()
+
+	// var fileName string
+	// var children int
+
+	// if tdChild.Children().Length() == 1 {
+	// 	fileName, _ = tdChild.First().Attr("title")
+	// 	children = tdChild.Children().Length()
+	// } else {
+	// 	fileName, _ = tdChild.First().Next().Attr("title")
+	// 	children = tdChild.Children().Length()
+	// }
+
+	// fmt.Printf("fileName: %v\n", strings.TrimSpace(fileName))
+	// fmt.Printf("children: %v\n", children)
+	// fmt.Println("~~~")
+	// href, _ := s.Find(".text-center").Find("a").Siblings().Attr("href")
+	// retVal[strings.TrimSpace(tTitle)] = href
 
 	return retVal
 }
@@ -91,7 +112,7 @@ func OpenMagnet(magnetLink string) error {
 	case "darwin":
 		err = exec.Command("open", magnetLink).Start()
 	default:
-		err = errors.New("Unsupported Platform")
+		err = errors.New("unsupported platform")
 	}
 
 	return err
