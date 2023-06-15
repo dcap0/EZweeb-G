@@ -5,31 +5,35 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/dcap0/EZ-weeb-G/pkg/data"
 	"github.com/dcap0/EZ-weeb-G/pkg/logic"
-	"github.com/dcap0/EZ-weeb-G/pkg/models"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
+var defaultOptions = data.Options{"1080p", "eng"}
 var yotsubatoColor = tcell.NewRGBColor(206, 230, 110)
 var yotsubatoCompliment = tcell.NewRGBColor(134, 110, 230)
 
 const stringUpArrow string = string(rune(8593))
 const stringDownArrow string = string(rune(8595))
+const showListDescription string = "(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate\t\t(Enter) Get Torrent Links"
 
 // InitUI takes a slice of Series structs,
 // builds UI around the data. and formats it.
-func InitUI(seriesData []models.Series) {
+func InitUI(seriesData []data.Series) {
 	//Initialize Widgets
 	app := tview.NewApplication()
 	showList := showListInit(seriesData)
 	descriptionText := descriptionTextInit()
 	downloadList := downloadListInit()
 	controlsView := controlsViewInit()
+	optionsMenu := optionsMenuInit(tview.NewBox().SetTitle("FUCKIN' WEEB").SetBorder(true), 40, 10)
+	pages := tview.NewPages()
 
 	//Set startup content
 	descriptionText.Clear().SetText(seriesData[showList.GetCurrentItem()].Description)
-	controlsView.SetText(fmt.Sprintf("(Enter) Get Torrent Links\t\t(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate", stringUpArrow, stringDownArrow))
+	controlsView.SetText(fmt.Sprintf(showListDescription, stringUpArrow, stringDownArrow))
 
 	//Set up Layout
 	sideFlex := tview.NewFlex().
@@ -99,22 +103,29 @@ func InitUI(seriesData []models.Series) {
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
 		switch input := event.Rune(); input {
+
+		case 52: //4
+			pages.SendToFront("options")
+
 		case 113: //q
 			app.Stop()
 		case 49: //1
 			app.SetFocus(showList)
-			controlsView.Clear().SetText(fmt.Sprintf("(Enter) Get Torrent Links\t\t(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate", stringUpArrow, stringDownArrow))
+			controlsView.Clear().SetText(fmt.Sprintf("(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate\t\t(Enter) Get Torrent Links", stringUpArrow, stringDownArrow))
 		case 50: //2
 			app.SetFocus(descriptionText)
 			controlsView.Clear().SetText(fmt.Sprintf("(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate", stringUpArrow, stringDownArrow))
 		case 51: //3
 			app.SetFocus(downloadList)
-			controlsView.Clear().SetText(fmt.Sprintf("(Enter) Download Selected Torrent\t\t(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate", stringUpArrow, stringDownArrow))
+			controlsView.Clear().SetText(fmt.Sprintf("(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate\t\t(Enter) Download Selected Torrent\t\t", stringUpArrow, stringDownArrow))
 		}
 		return event
 	})
 
-	if err := app.SetRoot(topFlex, true).EnableMouse(false).Run(); err != nil {
+	pages.AddPage("options", optionsMenu, true, true)
+	pages.AddPage("main", topFlex, true, true)
+
+	if err := app.SetRoot(pages, true).EnableMouse(false).Run(); err != nil {
 		panic(err)
 	}
 }
@@ -135,7 +146,7 @@ func descriptionTextInit() *tview.TextView {
 
 // showListInit returns a list widget that has the application styles applied.
 // it populates the list with relevent series titles.
-func showListInit(seriesData []models.Series) *tview.List {
+func showListInit(seriesData []data.Series) *tview.List {
 	showList := tview.
 		NewList().
 		ShowSecondaryText(false).
@@ -206,4 +217,14 @@ func messageModalInit(textContent string) *tview.Modal {
 	messageModal.AddButtons([]string{"OK"})
 
 	return messageModal
+}
+
+func optionsMenuInit(p tview.Primitive, width, height int) tview.Primitive {
+	return tview.NewFlex().
+		AddItem(nil, 0, 1, false).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+			AddItem(nil, 0, 1, false).
+			AddItem(p, height, 1, true).
+			AddItem(nil, 0, 1, false), width, 1, true).
+		AddItem(nil, 0, 1, false)
 }
