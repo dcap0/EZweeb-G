@@ -15,14 +15,14 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/dcap0/EZ-weeb-G/pkg/models"
+	"github.com/dcap0/EZ-weeb-G/pkg/data"
 )
 
 // GetSeriesHtml sends a request to MAL to get the current season page.
 // HTML is parsed to pull series titles and descriptions.
 // Returns a Slice of type models.Series struct
-func GetSeriesHtml() []models.Series {
-	seriesData := make([]models.Series, 0)
+func GetSeriesHtml() []data.Series {
+	seriesData := make([]data.Series, 0)
 
 	resp, err := http.Get("https://myanimelist.net/anime/season")
 
@@ -49,7 +49,7 @@ func GetSeriesHtml() []models.Series {
 	})
 
 	for i := 0; i < len(titles); i++ {
-		seriesData = append(seriesData, models.Series{Title: titles[i], Description: descriptions[i]})
+		seriesData = append(seriesData, data.Series{Title: titles[i], Description: descriptions[i]})
 	}
 
 	return seriesData
