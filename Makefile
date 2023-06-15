@@ -1,51 +1,29 @@
 BINARY_NAME=ezweeb
 
 build:
+	@go mod tidy 
 	@go build -o ./bin/${BINARY_NAME} ./cmd/ezweeb/ezweeb.go
 
 build-dist:
+	@go mod tidy 
 ifeq ($(OS),Windows_NT)
-	$(info Building for Windows)
-	@go build -o bin/${BINARY_NAME}-windows ./cmd/ezweeb/ezweeb.go
-	$(info Done!)
-	$(info ~~~)
-	$(info Building for Linux)
-	@set GOARCH=amd64 
-	@set GOOS=linux
-	@go build -o bin/${BINARY_NAME}-linux ./cmd/ezweeb/ezweeb.go
-	$(info Done!)
-	$(info ~~~)
-	$(info Building for MacOS-AMD)
-	@set GOARCH=amd64 
-	@set GOOS=darwin
-	@go build -o bin/${BINARY_NAME}-darwin_amd ./cmd/ezweeb/ezweeb.go
-	$(info Done!)
-	$(info ~~~)
-	$(info Building for MacOS-ARM)
-	@set GOARCH=arm64 
-	@set GOOS=darwin
-	@go build -o bin/${BINARY_NAME}-darwin_arm ./cmd/ezweeb/ezweeb.go
-	$(info Done!)
+	@powershell "echo \"building for windows\"; go build -o bin/${BINARY_NAME}_windows.exe ./cmd/ezweeb/ezweeb.go; echo done"
+	@powershell "echo \"building for linux-amd\"; go env -w GOOS=linux; go build -o bin/${BINARY_NAME}_linux-amd ./cmd/ezweeb/ezweeb.go; echo done"
+	@powershell "echo \"building for darwin-amd\"; go env -w GOOS=darwin; go build -o bin/${BINARY_NAME}_darwin-amd ./cmd/ezweeb/ezweeb.go; echo done"
+	@powershell "echo \"building for linux-arm\"; go env -w GOOS=linux; go env -w GOARCH=arm64; go build -o bin/${BINARY_NAME}_linux-arm ./cmd/ezweeb/ezweeb.go; echo done"
+	@powershell "echo \"building for darwin-arm\"; go env -w GOOS=darwin; go env -w GOARCH=arm64; go build -o bin/${BINARY_NAME}_darwin-arm ./cmd/ezweeb/ezweeb.go; echo done"
+	@powershell "go env -w GOOS=windows; go env -w GOARCH=amd64"
 else
-	$(info Building for Linux)
-	@GOARCH=amd64 GOOS=linux go build -o bin/${BINARY_NAME}-linux ./cmd/ezweeb/ezweeb.go
-	$(info Done!)
-	$(info ~~~)
-	$(info Building for MacOS-AMD)
-	@GOARCH=amd64 GOOS=darwin go build -o bin/${BINARY_NAME}-darwin_amd ./cmd/ezweeb/ezweeb.go
-	$(info Done!)
-	$(info ~~~)
-	$(info Building for MacOS-ARM)
-	@GOARCH=arm64 GOOS=darwin go build -o bin/${BINARY_NAME}-darwin_arm ./cmd/ezweeb/ezweeb.go
-	$(info Done!)
-	$(info ~~~)
-	$(info Building for Windows)
-	@GOARCH=amd64 GOOS=windows go build -o bin/${BINARY_NAME}-windows ./cmd/ezweeb/ezweeb.go
-	$(info Done!)
+	@echo "building for linux-amd";GOARCH=amd64 GOOS=linux go build -o bin/${BINARY_NAME}_linux-amd ./cmd/ezweeb/ezweeb.go; echo "done"
+	@echo "building for linux-arm";GOARCH=arm64 GOOS=linux go build -o bin/${BINARY_NAME}_linux-arm ./cmd/ezweeb/ezweeb.go; echo "done"
+	@echo "building for darwin-amd";GOARCH=amd64 GOOS=darwin go build -o bin/${BINARY_NAME}_darwin-amd ./cmd/ezweeb/ezweeb.go; echo "done"
+	@echo "building for darwin-arm";GOARCH=arm64 GOOS=darwin go build -o bin/${BINARY_NAME}_darwin-arm ./cmd/ezweeb/ezweeb.go; echo "done"
+	@echo "building for windows";GOARCH=amd64 GOOS=windows go build -o bin/${BINARY_NAME}-windows ./cmd/ezweeb/ezweeb.go; echo "done"
 endif
 
 
 run: build
+	@go mod tidy 
 	@./bin/${BINARY_NAME}
 	
 
