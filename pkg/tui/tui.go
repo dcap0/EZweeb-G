@@ -17,7 +17,9 @@ var yotsubatoCompliment = tcell.NewRGBColor(134, 110, 230)
 
 const stringUpArrow string = string(rune(8593))
 const stringDownArrow string = string(rune(8595))
-const showListDescription string = "(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate\t\t(Enter) Get Torrent Links"
+const baseDirections = "(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate\t\t"
+const showListDirections string = baseDirections + "(Enter) Get Torrent Links"
+const downloadListDirections string = baseDirections + "(Enter) Download Selected Torrent"
 
 // InitUI takes a slice of Series structs,
 // builds UI around the data. and formats it.
@@ -33,7 +35,7 @@ func InitUI(seriesData []data.Series) {
 
 	//Set startup content
 	descriptionText.Clear().SetText(seriesData[showList.GetCurrentItem()].Description)
-	controlsView.SetText(fmt.Sprintf(showListDescription, stringUpArrow, stringDownArrow))
+	controlsView.SetText(fmt.Sprintf(showListDirections, stringUpArrow, stringDownArrow))
 
 	//Set up Layout
 	sideFlex := tview.NewFlex().
@@ -56,48 +58,60 @@ func InitUI(seriesData []data.Series) {
 		descriptionText.Clear().SetText(seriesData[index].Description)
 	})
 
-	showList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// if enter is pressed on a title, it will clear the list
-		// and populate it with available torrent filenames
-		// stes focus on the download list
-		if event.Rune() == 13 { //enter key
-			populateDownloadList(
-				downloadList,
-				logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title),
-			)
-			app.SetFocus(downloadList)
-		}
-
-		return event
-	})
-
-	downloadList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Rune() == 13 { //enter key
-			//magnet link
-			selectedTorrent, _ := downloadList.GetItemText(downloadList.GetCurrentItem())
-			downloadMap := logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title)
-			err := logic.OpenMagnet(downloadMap[selectedTorrent])
-			if err != nil {
-				modal := messageModalInit("An error occurred while opening the magnet link:\n" + err.Error()).
-					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-						if buttonLabel == "OK" {
-							app.SetRoot(topFlex, false).SetFocus(showList)
-						}
-					})
-
-				app.SetRoot(modal, false).SetFocus(modal)
-			} else {
-				modal := messageModalInit("Opening Magnet Link:\n" + selectedTorrent).
-					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-						if buttonLabel == "OK" {
-							app.SetRoot(topFlex, false).SetFocus(showList)
-						}
-					})
-
-				app.SetRoot(modal, false).SetFocus(modal)
+	showList.
+		SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			// if enter is pressed on a title, it will clear the list
+			// and populate it with available torrent filenames
+			// stes focus on the download list
+			if event.Rune() == 13 { //enter key
+				populateDownloadList(
+					downloadList,
+					logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title),
+				)
+				app.SetFocus(downloadList)
 			}
-		}
-		return event
+
+			return event
+		}).
+		SetFocusFunc(func() {
+			controlsView.SetText(fmt.Sprintf(showListDirections, stringUpArrow, stringDownArrow))
+		})
+
+	downloadList.
+		SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			if event.Rune() == 13 { //enter key
+				//magnet link
+				selectedTorrent, _ := downloadList.GetItemText(downloadList.GetCurrentItem())
+				downloadMap := logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title)
+				err := logic.OpenMagnet(downloadMap[selectedTorrent])
+				if err != nil {
+					modal := messageModalInit("An error occurred while opening the magnet link:\n" + err.Error()).
+						SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+							if buttonLabel == "OK" {
+								app.SetRoot(topFlex, false).SetFocus(showList)
+							}
+						})
+
+					app.SetRoot(modal, false).SetFocus(modal)
+				} else {
+					modal := messageModalInit("Opening Magnet Link:\n" + selectedTorrent).
+						SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+							if buttonLabel == "OK" {
+								app.SetRoot(topFlex, false).SetFocus(showList)
+							}
+						})
+
+					app.SetRoot(modal, false).SetFocus(modal)
+				}
+			}
+			return event
+		}).
+		SetFocusFunc(func() {
+			controlsView.SetText(fmt.Sprintf(downloadListDirections, stringUpArrow, stringDownArrow))
+		})
+
+	descriptionText.SetFocusFunc(func() {
+		controlsView.Clear().SetText(fmt.Sprintf(baseDirections, stringUpArrow, stringDownArrow))
 	})
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -111,13 +125,10 @@ func InitUI(seriesData []data.Series) {
 			app.Stop()
 		case 49: //1
 			app.SetFocus(showList)
-			controlsView.Clear().SetText(fmt.Sprintf("(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate\t\t(Enter) Get Torrent Links", stringUpArrow, stringDownArrow))
 		case 50: //2
 			app.SetFocus(descriptionText)
-			controlsView.Clear().SetText(fmt.Sprintf("(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate", stringUpArrow, stringDownArrow))
 		case 51: //3
 			app.SetFocus(downloadList)
-			controlsView.Clear().SetText(fmt.Sprintf("(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate\t\t(Enter) Download Selected Torrent\t\t", stringUpArrow, stringDownArrow))
 		}
 		return event
 	})
