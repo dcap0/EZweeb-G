@@ -9,5 +9,5 @@ type Series struct {
 
 //Holds user options
 type Options struct {
-	Quality, SubLang string
+	Year, Season, Quality, SubLang string
 }
