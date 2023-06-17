@@ -192,6 +192,10 @@ func populateDownloadList(downloadList *tview.List, downloadLinks map[string]str
 
 	sort.Strings(keys)
 
+	if len(keys) == 0 {
+		keys = append(keys, "No torrents found on Nyaa")
+	}
+
 	for _, linkTitle := range keys {
 		downloadList.AddItem(linkTitle, "", rune(0), nil).
 			SetShortcutColor(yotsubatoColor)
