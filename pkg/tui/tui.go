@@ -11,7 +11,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-var currentOptions = data.Options{"1080p", "eng"}
+var currentOptions = data.Options{"", "", "1080p", "eng"}
 var yotsubatoColor = tcell.NewRGBColor(206, 230, 110)
 var yotsubatoCompliment = tcell.NewRGBColor(134, 110, 230)
 
@@ -31,10 +31,7 @@ func InitUI(seriesData []data.Series) {
 	downloadList := downloadListInit()
 	controlsView := controlsViewInit()
 
-	optionsTree := qualityDropdownInit()
-	optionsTree.SetTitle("take 2").SetBorder(true)
-
-	optionsMenu := optionsMenuInit(optionsTree.Box, 40, 10)
+	optionsMenu := optionsMenuInit(tview.NewTextView(), 40, 10)
 	pages := tview.NewPages()
 
 	//Set startup content
@@ -118,7 +115,7 @@ func InitUI(seriesData []data.Series) {
 		controlsView.Clear().SetText(fmt.Sprintf(baseDirections, stringUpArrow, stringDownArrow))
 	})
 
-	pages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		front, _ := pages.GetFrontPage()
 
 		switch input := event.Rune(); input {
@@ -259,26 +256,26 @@ func optionsMenuInit(p tview.Primitive, width, height int) tview.Primitive {
 		AddItem(nil, 0, 1, false)
 }
 
-func qualityDropdownInit() *tview.DropDown {
-	qualityDropDown := tview.NewDropDown()
-	availableQualities := []string{"480p", "720p", "1080p"}
-	qualityDropDown.
-		SetOptions(
-			availableQualities,
-			nil,
-		).
-		// SetCurrentOption(availableQualities).
-		SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			if event.Rune() == 13 {
-				_, quality := qualityDropDown.GetCurrentOption()
-				currentOptions.Quality = quality
-			}
+// func qualityDropdownInit() *tview.DropDown {
+// 	qualityDropDown := tview.NewDropDown()
+// 	availableQualities := []string{"480p", "720p", "1080p"}
+// 	qualityDropDown.
+// 		SetOptions(
+// 			availableQualities,
+// 			nil,
+// 		).
+// 		// SetCurrentOption(availableQualities).
+// 		SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+// 			if event.Rune() == 13 {
+// 				_, quality := qualityDropDown.GetCurrentOption()
+// 				currentOptions.Quality = quality
+// 			}
 
-			return event
-		})
+// 			return event
+// 		})
 
-	return qualityDropDown
-}
+// 	return qualityDropDown
+// }
 
 // func qualityOptionsNode() {
 
