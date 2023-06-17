@@ -11,7 +11,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-var defaultOptions = data.Options{"1080p", "eng"}
+var currentOptions = data.Options{"1080p", "eng"}
 var yotsubatoColor = tcell.NewRGBColor(206, 230, 110)
 var yotsubatoCompliment = tcell.NewRGBColor(134, 110, 230)
 
@@ -30,7 +30,11 @@ func InitUI(seriesData []data.Series) {
 	descriptionText := descriptionTextInit()
 	downloadList := downloadListInit()
 	controlsView := controlsViewInit()
-	optionsMenu := optionsMenuInit(tview.NewBox().SetTitle("FUCKIN' WEEB").SetBorder(true), 40, 10)
+
+	optionsTree := qualityDropdownInit()
+	optionsTree.SetTitle("take 2").SetBorder(true)
+
+	optionsMenu := optionsMenuInit(optionsTree.Box, 40, 10)
 	pages := tview.NewPages()
 
 	//Set startup content
@@ -114,20 +118,31 @@ func InitUI(seriesData []data.Series) {
 		controlsView.Clear().SetText(fmt.Sprintf(baseDirections, stringUpArrow, stringDownArrow))
 	})
 
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	pages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		front, _ := pages.GetFrontPage()
 
 		switch input := event.Rune(); input {
-
 		case 52: //4
-			pages.SendToFront("options")
-
+			if front == "main" {
+				pages.SendToFront("options")
+			}
+			app.SetFocus(optionsMenu)
 		case 113: //q
 			app.Stop()
 		case 49: //1
+			if front == "options" {
+				pages.SendToBack("options")
+			}
 			app.SetFocus(showList)
 		case 50: //2
+			if front == "options" {
+				pages.SendToBack("options")
+			}
 			app.SetFocus(descriptionText)
 		case 51: //3
+			if front == "options" {
+				pages.SendToBack("options")
+			}
 			app.SetFocus(downloadList)
 		}
 		return event
@@ -239,3 +254,28 @@ func optionsMenuInit(p tview.Primitive, width, height int) tview.Primitive {
 			AddItem(nil, 0, 1, false), width, 1, true).
 		AddItem(nil, 0, 1, false)
 }
+
+func qualityDropdownInit() *tview.DropDown {
+	qualityDropDown := tview.NewDropDown()
+	availableQualities := []string{"480p", "720p", "1080p"}
+	qualityDropDown.
+		SetOptions(
+			availableQualities,
+			nil,
+		).
+		// SetCurrentOption(availableQualities).
+		SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			if event.Rune() == 13 {
+				_, quality := qualityDropDown.GetCurrentOption()
+				currentOptions.Quality = quality
+			}
+
+			return event
+		})
+
+	return qualityDropDown
+}
+
+// func qualityOptionsNode() {
+
+// }

@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"reflect"
 	"runtime"
 	"strings"
 
@@ -131,4 +132,20 @@ func OpenMagnet(magnetLink string) error {
 	}
 
 	return err
+}
+
+func IndexOf(arr interface{}, value any) (int, error) {
+
+	arrType := arr.([]string)
+	valueType := reflect.TypeOf(value)
+
+	if arrType != valueType {
+		return 0, fmt.Errorf("type mismatch: arr is %v, value is %v", arrType, valueType)
+	}
+
+	if len(arr) == 0 {
+		return 0, errors.New("empty array")
+	}
+
+	return 10, nil
 }
