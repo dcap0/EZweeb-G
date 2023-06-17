@@ -2,7 +2,11 @@ BINARY_NAME=ezweeb
 
 build:
 	@go mod tidy 
+ifeq ($(OS),Windows_NT)
+	@go build -o ./bin/${BINARY_NAME}.exe ./cmd/ezweeb/ezweeb.go
+else
 	@go build -o ./bin/${BINARY_NAME} ./cmd/ezweeb/ezweeb.go
+endif
 
 build-dist:
 	@go mod tidy 
