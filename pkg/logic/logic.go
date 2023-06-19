@@ -15,16 +15,23 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/dcap0/EZ-weeb-G/pkg/models"
+	"github.com/dcap0/EZ-weeb-G/pkg/data"
 )
 
 // GetSeriesHtml sends a request to MAL to get the current season page.
+// It takes a year and season.
 // HTML is parsed to pull series titles and descriptions.
-// Returns a Slice of type models.Series struct
-func GetSeriesHtml() []models.Series {
-	seriesData := make([]models.Series, 0)
+// Returns a Slice of type models.Series struct.
+func GetSeriesHtml(year, season string) []data.Series {
+	seriesData := make([]data.Series, 0)
 
-	resp, err := http.Get("https://myanimelist.net/anime/season")
+	queryString := "https://myanimelist.net/anime/season"
+
+	if year != "" && season != "" {
+		queryString += "/" + year + "/" + season
+	}
+
+	resp, err := http.Get(queryString)
 
 	if err != nil {
 		log.Fatal(err)
@@ -49,20 +56,28 @@ func GetSeriesHtml() []models.Series {
 	})
 
 	for i := 0; i < len(titles); i++ {
-		seriesData = append(seriesData, models.Series{Title: titles[i], Description: descriptions[i]})
+		seriesData = append(seriesData, data.Series{Title: titles[i], Description: descriptions[i]})
 	}
 
 	return seriesData
 }
 
-// GetSeriesDownloadLink sends a request to nyaa.si with a [title] to query.
+// GetSeriesDownloadLink sends a request to nyaa.si with a title to query, as well as video quality and subtitle language.
 // HTML is parsed to pull "successful" torrents as well as their associated magnet links.
 // Returns a map of torrent file name to magnet link.
-func GetSeriesDownloadLink(title string) map[string]string {
+func GetSeriesDownloadLink(title, quality, subtitle string) map[string]string {
 	retVal := make(map[string]string)
 	const queryUri string = "https://nyaa.si/?f=0&c=0_0&q="
 	queryTitle := strings.ReplaceAll(title, " ", "+")
-	queryTitle += "+sub"
+
+	if quality != "" {
+		queryTitle += "+" + quality
+	}
+
+	if subtitle != "" {
+		queryTitle += "+" + subtitle
+	}
+
 	resp, err := http.Get(queryUri + queryTitle)
 
 	if err != nil {
@@ -132,3 +147,19 @@ func OpenMagnet(magnetLink string) error {
 
 	return err
 }
+
+// func IndexOf(arr interface{}, value any) (int, error) {
+
+// 	arrType := arr.([]string)
+// 	valueType := reflect.TypeOf(value)
+
+// 	if arrType != valueType {
+// 		return 0, fmt.Errorf("type mismatch: arr is %v, value is %v", arrType, valueType)
+// 	}
+
+// 	if len(arr) == 0 {
+// 		return 0, errors.New("empty array")
+// 	}
+
+// 	return 10, nil
+// }

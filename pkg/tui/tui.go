@@ -4,35 +4,53 @@ package tui
 import (
 	"fmt"
 	"sort"
+	"strconv"
+	"time"
 
+	"github.com/dcap0/EZ-weeb-G/pkg/data"
 	"github.com/dcap0/EZ-weeb-G/pkg/logic"
-	"github.com/dcap0/EZ-weeb-G/pkg/models"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
+var currentOptions = data.Options{Year: "", Season: "", Quality: "", SubLang: "eng"}
 var yotsubatoColor = tcell.NewRGBColor(206, 230, 110)
 var yotsubatoCompliment = tcell.NewRGBColor(134, 110, 230)
 
 const stringUpArrow string = string(rune(8593))
 const stringDownArrow string = string(rune(8595))
-const baseDirections = "(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate\t\t"
+const baseDirections = "(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate\t(o) Options\t(r) Refresh\t"
+const optionsDirections = "(q) Quit\t(Tab) Navigate Down\t(Shift+Tab) Navigate Up\t(Enter) Select Item\t(o) Exit Options"
 const showListDirections string = baseDirections + "(Enter) Get Torrent Links"
 const downloadListDirections string = baseDirections + "(Enter) Download Selected Torrent"
+const optionsReadoutData string = "Selected Year: %s Selected Season: %s Selected Quality %s"
 
-// InitUI takes a slice of Series structs,
+var seriesData []data.Series = logic.GetSeriesHtml(currentOptions.Year, currentOptions.Season)
+
+var app *tview.Application
+
+// InitUI takes a slice of Series structs,s
 // builds UI around the data. and formats it.
-func InitUI(seriesData []models.Series) {
-	//Initialize Widgets
-	app := tview.NewApplication()
-	showList := showListInit(seriesData)
+func InitUI() {
+	//Get Series Data
+
+	//Initialize main Widgets
+	app = tview.NewApplication()
+	showList := showListInit()
 	descriptionText := descriptionTextInit()
 	downloadList := downloadListInit()
-	controlsView := controlsViewInit()
+	controlsView := infoViewInit()
+	optionsReadout := infoViewInit()
+
+	//Initialize options Widgets
+	optionsForm := initOptionsForm()
+
+	pages := tview.NewPages()
 
 	//Set startup content
 	descriptionText.Clear().SetText(seriesData[showList.GetCurrentItem()].Description)
-	controlsView.SetText(fmt.Sprintf(showListDirections, stringUpArrow, stringDownArrow))
+	controlsView.Clear().SetText(fmt.Sprintf(showListDirections, stringUpArrow, stringDownArrow))
+	optionsReadout.Clear().SetText(fmt.Sprintf(optionsReadoutData, currentOptions.Year, currentOptions.Season, currentOptions.Quality))
 
 	//Set up Layout
 	sideFlex := tview.NewFlex().
@@ -46,7 +64,8 @@ func InitUI(seriesData []models.Series) {
 
 	topFlex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(contentFlex, 0, 100, true).
+		AddItem(optionsReadout, 0, 1, false).
+		AddItem(pages, 0, 100, true).
 		AddItem(controlsView, 0, 1, false)
 
 	//listeners
@@ -63,7 +82,7 @@ func InitUI(seriesData []models.Series) {
 			if event.Rune() == 13 { //enter key
 				populateDownloadList(
 					downloadList,
-					logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title),
+					logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title, currentOptions.Quality, ""),
 				)
 				app.SetFocus(downloadList)
 			}
@@ -71,7 +90,7 @@ func InitUI(seriesData []models.Series) {
 			return event
 		}).
 		SetFocusFunc(func() {
-			controlsView.SetText(fmt.Sprintf(showListDirections, stringUpArrow, stringDownArrow))
+			controlsView.Clear().SetText(fmt.Sprintf(showListDirections, stringUpArrow, stringDownArrow))
 		})
 
 	downloadList.
@@ -79,7 +98,7 @@ func InitUI(seriesData []models.Series) {
 			if event.Rune() == 13 { //enter key
 				//magnet link
 				selectedTorrent, _ := downloadList.GetItemText(downloadList.GetCurrentItem())
-				downloadMap := logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title)
+				downloadMap := logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title, currentOptions.Quality, "")
 				err := logic.OpenMagnet(downloadMap[selectedTorrent])
 				if err != nil {
 					modal := messageModalInit("An error occurred while opening the magnet link:\n" + err.Error()).
@@ -104,27 +123,52 @@ func InitUI(seriesData []models.Series) {
 			return event
 		}).
 		SetFocusFunc(func() {
-			controlsView.SetText(fmt.Sprintf(downloadListDirections, stringUpArrow, stringDownArrow))
+			controlsView.Clear().SetText(fmt.Sprintf(downloadListDirections, stringUpArrow, stringDownArrow))
 		})
 
 	descriptionText.SetFocusFunc(func() {
 		controlsView.Clear().SetText(fmt.Sprintf(baseDirections, stringUpArrow, stringDownArrow))
 	})
 
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-
+	contentFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch input := event.Rune(); input {
-		case 113: //q
-			app.Stop()
 		case 49: //1
 			app.SetFocus(showList)
 		case 50: //2
 			app.SetFocus(descriptionText)
 		case 51: //3
 			app.SetFocus(downloadList)
+		case 114:
+			descriptionText.Clear()
+			downloadList.Clear()
+			populateShowList(showList, seriesData)
 		}
 		return event
 	})
+
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		front, _ := pages.GetFrontPage()
+
+		switch input := event.Rune(); input {
+		case 111: //o
+			if front == "main" {
+				pages.SendToFront("options")
+				controlsView.Clear().SetText(optionsDirections)
+			} else {
+				pages.SendToFront("main")
+				app.SetFocus(showList)
+				controlsView.Clear().SetText(fmt.Sprintf(showListDirections, stringUpArrow, stringDownArrow))
+				populateShowList(showList, seriesData)
+				//apply options
+			}
+		case 113: //q
+			app.Stop()
+		}
+		return event
+	})
+
+	pages.AddPage("options", optionsForm, true, true)
+	pages.AddPage("main", contentFlex, true, true)
 
 	if err := app.SetRoot(topFlex, true).EnableMouse(false).Run(); err != nil {
 		panic(err)
@@ -147,7 +191,7 @@ func descriptionTextInit() *tview.TextView {
 
 // showListInit returns a list widget that has the application styles applied.
 // it populates the list with relevent series titles.
-func showListInit(seriesData []models.Series) *tview.List {
+func showListInit() *tview.List {
 	showList := tview.
 		NewList().
 		ShowSecondaryText(false).
@@ -158,12 +202,17 @@ func showListInit(seriesData []models.Series) *tview.List {
 		SetBorderPadding(2, 2, 2, 2).
 		SetBorder(true)
 
+	populateShowList(showList, seriesData)
+
+	return showList
+}
+
+func populateShowList(showList *tview.List, seriesData []data.Series) {
+	showList.Clear()
 	for _, show := range seriesData {
 		showList.AddItem(show.Title, "", rune(0), nil).
 			SetShortcutColor(yotsubatoColor)
 	}
-
-	return showList
 }
 
 // downloadListInit returns a list widget with application styles applied.
@@ -203,7 +252,7 @@ func populateDownloadList(downloadList *tview.List, downloadLinks map[string]str
 }
 
 // controlsViewInit returns a textview widget with application styles applied.
-func controlsViewInit() *tview.TextView {
+func infoViewInit() *tview.TextView {
 	controlsView := tview.NewTextView()
 
 	controlsView.
@@ -222,4 +271,50 @@ func messageModalInit(textContent string) *tview.Modal {
 	messageModal.AddButtons([]string{"OK"})
 
 	return messageModal
+}
+
+func initOptionsForm() *tview.Form {
+	optionsForm := tview.NewForm()
+	optionsForm.
+		SetFieldBackgroundColor(yotsubatoCompliment).
+		SetFieldTextColor(yotsubatoColor).
+		SetButtonBackgroundColor(yotsubatoCompliment).
+		SetTitleColor(yotsubatoCompliment).
+		SetBorder(true).
+		SetBorderColor(yotsubatoColor).
+		SetTitle("Options")
+	optionsForm.
+		AddDropDown("Quality", []string{"", "1080p", "720p", "480p"}, 0, nil).
+		AddDropDown("Season", []string{"", "winter", "spring", "summer", "fall"}, 0, nil).
+		AddInputField(
+			"Year",
+			currentOptions.Year,
+			20,
+			func(textToCheck string, lastChar rune) bool {
+				_, err := strconv.Atoi(textToCheck)
+				return err == nil
+			},
+			nil,
+		).
+		AddButton(
+			"Set to Current Season", func() {
+				currentOptions.Year = ""
+				currentOptions.Season = ""
+				optionsForm.GetFormItemByLabel("Year").(*tview.InputField).SetText(currentOptions.Year)
+				optionsForm.GetFormItemByLabel("Season").(*tview.DropDown).SetCurrentOption(0)
+			},
+		).
+		AddButton("Save", func() {
+			currentOptions.Year = optionsForm.GetFormItemByLabel("Year").(*tview.InputField).GetText()
+			_, season := optionsForm.GetFormItemByLabel("Season").(*tview.DropDown).GetCurrentOption()
+			currentOptions.Season = season
+			_, quality := optionsForm.GetFormItemByLabel("Quality").(*tview.DropDown).GetCurrentOption()
+			currentOptions.Quality = quality
+			seriesData = logic.GetSeriesHtml(currentOptions.Year, currentOptions.Season)
+			optionsForm.GetFormItemByLabel("Last Saved:").(*tview.TextView).SetText(time.Now().Format(time.RFC3339))
+		}).
+		AddTextView("Last Saved:", "", 0, 1, false, false).
+		SetFocus(3)
+
+	return optionsForm
 }
