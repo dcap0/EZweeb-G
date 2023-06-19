@@ -19,12 +19,19 @@ import (
 )
 
 // GetSeriesHtml sends a request to MAL to get the current season page.
+// It takes a year and season.
 // HTML is parsed to pull series titles and descriptions.
-// Returns a Slice of type models.Series struct
-func GetSeriesHtml() []data.Series {
+// Returns a Slice of type models.Series struct.
+func GetSeriesHtml(year, season string) []data.Series {
 	seriesData := make([]data.Series, 0)
 
-	resp, err := http.Get("https://myanimelist.net/anime/season")
+	queryString := "https://myanimelist.net/anime/season"
+
+	if year != "" && season != "" {
+		queryString += "/" + year + "/" + season
+	}
+
+	resp, err := http.Get(queryString)
 
 	if err != nil {
 		log.Fatal(err)
@@ -55,14 +62,22 @@ func GetSeriesHtml() []data.Series {
 	return seriesData
 }
 
-// GetSeriesDownloadLink sends a request to nyaa.si with a [title] to query.
+// GetSeriesDownloadLink sends a request to nyaa.si with a title to query, as well as video quality and subtitle language.
 // HTML is parsed to pull "successful" torrents as well as their associated magnet links.
 // Returns a map of torrent file name to magnet link.
-func GetSeriesDownloadLink(title string) map[string]string {
+func GetSeriesDownloadLink(title, quality, subtitle string) map[string]string {
 	retVal := make(map[string]string)
 	const queryUri string = "https://nyaa.si/?f=0&c=0_0&q="
 	queryTitle := strings.ReplaceAll(title, " ", "+")
-	queryTitle += "+sub"
+
+	if quality != "" {
+		queryTitle += "+" + quality
+	}
+
+	if subtitle != "" {
+		queryTitle += "+" + subtitle
+	}
+
 	resp, err := http.Get(queryUri + queryTitle)
 
 	if err != nil {
