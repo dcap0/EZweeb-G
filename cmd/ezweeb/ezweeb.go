@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/dcap0/EZ-weeb-G/pkg/tui"
+	"github.com/dcap0/EZ-weeb-G/internal/tui"
 )
 
 // main starts the program.

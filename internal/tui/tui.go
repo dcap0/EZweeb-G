@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dcap0/EZ-weeb-G/pkg/data"
-	"github.com/dcap0/EZ-weeb-G/pkg/logic"
+	"github.com/dcap0/EZ-weeb-G/internal/data"
+	"github.com/dcap0/EZ-weeb-G/internal/logic"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )

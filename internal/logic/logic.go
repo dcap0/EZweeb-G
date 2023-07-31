@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/dcap0/EZ-weeb-G/pkg/data"
+	"github.com/dcap0/EZ-weeb-G/internal/data"
 )
 
 // GetSeriesHtml sends a request to MAL to get the current season page.
