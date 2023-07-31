@@ -65,7 +65,7 @@ func GetSeriesHtml(year, season string) []data.Series {
 // GetSeriesDownloadLink sends a request to nyaa.si with a title to query, as well as video quality and subtitle language.
 // HTML is parsed to pull "successful" torrents as well as their associated magnet links.
 // Returns a map of torrent file name to magnet link.
-func GetSeriesDownloadLink(title, quality, subtitle string) map[string]string {
+func GetSeriesDownloadLink(title, quality, subtitle string, safety data.Safety) map[string]string {
 	retVal := make(map[string]string)
 	const queryUri string = "https://nyaa.si/?f=0&c=0_0&q="
 	queryTitle := strings.ReplaceAll(title, " ", "+")
@@ -93,8 +93,23 @@ func GetSeriesDownloadLink(title, quality, subtitle string) map[string]string {
 
 	failCounter := 0
 
+	var htmlSearchParam string
+
+	switch safety {
+	case data.TRUSTED:
+		htmlSearchParam = ".success"
+	case data.DANGER:
+		htmlSearchParam = ".danger"
+	case data.DEFAULT:
+		htmlSearchParam = ".default"
+	case data.ALL:
+		htmlSearchParam = "tr"
+	default:
+		htmlSearchParam = ".success"
+	}
+
 	//get success files
-	doc.Find(".success").Each(func(i int, s *goquery.Selection) {
+	doc.Find(htmlSearchParam).Each(func(i int, s *goquery.Selection) {
 		var fileName string
 
 		//Element holding filename is always the secondTD (colspan=2)
