@@ -154,12 +154,14 @@ func InitUI() {
 				topFlex.
 					RemoveItem(controlsView).
 					AddItem(searchBar, 0, 1, true)
+				searchBar.SetText("", true).SetPlaceholder("Enter query...")
 				app.SetFocus(searchBar)
 
 			case 114: //r
 				descriptionText.Clear()
 				downloadList.Clear()
 				populateShowList(showList, seriesData)
+				app.SetFocus(showList)
 			}
 		}
 		return event
@@ -181,6 +183,8 @@ func InitUI() {
 							currentOptions.SafetyLevel),
 				)
 				descriptionText.Clear().SetText(fmt.Sprintf("Searched For: %s ~~", query))
+			} else {
+				populateShowList(showList, seriesData)
 			}
 			app.SetFocus(downloadList)
 			topFlex.
@@ -305,6 +309,9 @@ func searchBarInit() *tview.TextArea {
 		NewTextArea().
 		SetPlaceholder("Enter query...").
 		SetWordWrap(false)
+
+	searchBar.SetBackgroundColor(yotsubatoCompliment)
+	searchBar.SetTitleColor(yotsubatoColor)
 
 	return searchBar
 }
