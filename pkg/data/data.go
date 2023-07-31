@@ -2,12 +2,13 @@
 // for a series.
 package data
 
-//Holds data for a series
+// Holds data for a series
 type Series struct {
 	Title, Description string
 }
 
-//Holds user options
+// Holds user options
 type Options struct {
 	Year, Season, Quality, SubLang string
+	SafetyLevel                    Safety
 }
