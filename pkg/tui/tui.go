@@ -13,13 +13,13 @@ import (
 	"github.com/rivo/tview"
 )
 
-var currentOptions = data.Options{Year: "", Season: "", Quality: "", SubLang: "eng"}
+var currentOptions = data.Options{Year: "", Season: "", Quality: "", SubLang: "eng", SafetyLevel: data.TRUSTED}
 var yotsubatoColor = tcell.NewRGBColor(206, 230, 110)
 var yotsubatoCompliment = tcell.NewRGBColor(134, 110, 230)
 
 const stringUpArrow string = string(rune(8593))
 const stringDownArrow string = string(rune(8595))
-const baseDirections = "(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate\t(o) Options\t(r) Refresh\t"
+const baseDirections = "(1) Titles\t(2) Description\t(3) Torrent Links\t(q) Quit\t(%s %s) Navigate\t(o) Options\t(r) Refresh\t(0) Search\t"
 const optionsDirections = "(q) Quit\t(Tab) Navigate Down\t(Shift+Tab) Navigate Up\t(Enter) Select Item\t(o) Exit Options"
 const showListDirections string = baseDirections + "(Enter) Get Torrent Links"
 const downloadListDirections string = baseDirections + "(Enter) Download Selected Torrent"
@@ -32,6 +32,8 @@ var app *tview.Application
 // InitUI takes a slice of Series structs,s
 // builds UI around the data. and formats it.
 func InitUI() {
+	//lock for menu swaping
+	isLocked := false
 	//Get Series Data
 
 	//Initialize main Widgets
@@ -41,6 +43,7 @@ func InitUI() {
 	downloadList := downloadListInit()
 	controlsView := infoViewInit()
 	optionsReadout := infoViewInit()
+	searchBar := searchBarInit()
 
 	//Initialize options Widgets
 	optionsForm := initOptionsForm()
@@ -79,12 +82,16 @@ func InitUI() {
 			// if enter is pressed on a title, it will clear the list
 			// and populate it with available torrent filenames
 			// stes focus on the download list
-			if event.Rune() == 13 { //enter key
-				populateDownloadList(
-					downloadList,
-					logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title, currentOptions.Quality, ""),
-				)
-				app.SetFocus(downloadList)
+
+			if showList.GetItemCount() > 0 {
+				switch input := event.Rune(); input {
+				case 13:
+					populateDownloadList(
+						downloadList,
+						logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title, currentOptions.Quality, "", currentOptions.SafetyLevel),
+					)
+					app.SetFocus(downloadList)
+				}
 			}
 
 			return event
@@ -98,7 +105,7 @@ func InitUI() {
 			if event.Rune() == 13 { //enter key
 				//magnet link
 				selectedTorrent, _ := downloadList.GetItemText(downloadList.GetCurrentItem())
-				downloadMap := logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title, currentOptions.Quality, "")
+				downloadMap := logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title, currentOptions.Quality, "", currentOptions.SafetyLevel)
 				err := logic.OpenMagnet(downloadMap[selectedTorrent])
 				if err != nil {
 					modal := messageModalInit("An error occurred while opening the magnet link:\n" + err.Error()).
@@ -131,38 +138,80 @@ func InitUI() {
 	})
 
 	contentFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch input := event.Rune(); input {
-		case 49: //1
-			app.SetFocus(showList)
-		case 50: //2
-			app.SetFocus(descriptionText)
-		case 51: //3
-			app.SetFocus(downloadList)
-		case 114:
-			descriptionText.Clear()
-			downloadList.Clear()
-			populateShowList(showList, seriesData)
+		if !isLocked {
+			switch input := event.Rune(); input {
+			case 49: //1
+				app.SetFocus(showList)
+			case 50: //2
+				app.SetFocus(descriptionText)
+			case 51: //3
+				app.SetFocus(downloadList)
+			case 48: //0
+				isLocked = true
+				showList.Clear()
+				downloadList.Clear()
+				descriptionText.Clear()
+				topFlex.
+					RemoveItem(controlsView).
+					AddItem(searchBar, 0, 1, true)
+				app.SetFocus(searchBar)
+
+			case 114: //r
+				descriptionText.Clear()
+				downloadList.Clear()
+				populateShowList(showList, seriesData)
+			}
 		}
+		return event
+	})
+
+	searchBar.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+
+		switch input := event.Rune(); input {
+		case 13:
+			if searchBar.GetTextLength() > 0 {
+				query := searchBar.GetText()
+				populateDownloadList(
+					downloadList,
+					logic.
+						GetSeriesDownloadLink(
+							query,
+							currentOptions.Quality,
+							"",
+							currentOptions.SafetyLevel),
+				)
+				descriptionText.Clear().SetText(fmt.Sprintf("Searched For: %s ~~", query))
+			}
+			app.SetFocus(downloadList)
+			topFlex.
+				RemoveItem(searchBar).
+				AddItem(controlsView, 0, 1, true)
+
+			isLocked = false
+		}
+
 		return event
 	})
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		front, _ := pages.GetFrontPage()
 
-		switch input := event.Rune(); input {
-		case 111: //o
-			if front == "main" {
-				pages.SendToFront("options")
-				controlsView.Clear().SetText(optionsDirections)
-			} else {
-				pages.SendToFront("main")
-				app.SetFocus(showList)
-				controlsView.Clear().SetText(fmt.Sprintf(showListDirections, stringUpArrow, stringDownArrow))
-				populateShowList(showList, seriesData)
-				//apply options
+		if !isLocked {
+			switch input := event.Rune(); input {
+			case 111: //o
+				if front == "main" && !isLocked {
+					pages.SendToFront("options")
+					controlsView.Clear().SetText(optionsDirections)
+				} else {
+					pages.SendToFront("main")
+					app.SetFocus(showList)
+					controlsView.Clear().SetText(fmt.Sprintf(showListDirections, stringUpArrow, stringDownArrow))
+					populateShowList(showList, seriesData)
+					//apply options
+				}
+			case 113: //q
+				app.Stop()
 			}
-		case 113: //q
-			app.Stop()
 		}
 		return event
 	})
@@ -251,6 +300,15 @@ func populateDownloadList(downloadList *tview.List, downloadLinks map[string]str
 	}
 }
 
+func searchBarInit() *tview.TextArea {
+	searchBar := tview.
+		NewTextArea().
+		SetPlaceholder("Enter query...").
+		SetWordWrap(false)
+
+	return searchBar
+}
+
 // controlsViewInit returns a textview widget with application styles applied.
 func infoViewInit() *tview.TextView {
 	controlsView := tview.NewTextView()
@@ -286,6 +344,7 @@ func initOptionsForm() *tview.Form {
 	optionsForm.
 		AddDropDown("Quality", []string{"", "1080p", "720p", "480p"}, 0, nil).
 		AddDropDown("Season", []string{"", "winter", "spring", "summer", "fall"}, 0, nil).
+		AddDropDown("Torrent Safety Level", []string{"", "Trusted", "Default", "Potentially Dangerous", "All"}, 0, nil).
 		AddInputField(
 			"Year",
 			currentOptions.Year,
@@ -311,6 +370,22 @@ func initOptionsForm() *tview.Form {
 			_, quality := optionsForm.GetFormItemByLabel("Quality").(*tview.DropDown).GetCurrentOption()
 			currentOptions.Quality = quality
 			seriesData = logic.GetSeriesHtml(currentOptions.Year, currentOptions.Season)
+
+			_, safety := optionsForm.GetFormItemByLabel("Torrent Safety Level").(*tview.DropDown).GetCurrentOption()
+
+			switch safety {
+			case "Trusted":
+				currentOptions.SafetyLevel = data.TRUSTED
+			case "Default":
+				currentOptions.SafetyLevel = data.DEFAULT
+			case "Potentially Dangerous":
+				currentOptions.SafetyLevel = data.DANGER
+			case "All":
+				currentOptions.SafetyLevel = data.ALL
+			default:
+				currentOptions.SafetyLevel = data.TRUSTED
+			}
+
 			optionsForm.GetFormItemByLabel("Last Saved:").(*tview.TextView).SetText(time.Now().Format(time.RFC3339))
 		}).
 		AddTextView("Last Saved:", "", 0, 1, false, false).
