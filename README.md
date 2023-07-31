@@ -14,6 +14,17 @@ Linux and Mac:
 Windows
 `go build -o ./bin/${BINARY_NAME}.exe ./cmd/ezweeb/ezweeb.go`
 
+## Version Changes
+v1.1.0:
+ - Added a search function. It will now allow you to input a title and get results from Nyaa.
+ - Added an option to change the safety level. Can use any or all:
+    - Safe (Nyaa CSS ".success")
+    - Potentially Dangerous (Nyaa CSS ".danger")
+    - Default (Nyaa CSS ".default")
+
 ## Contributing
 
-No plans as of yet for contributing
+Submit a PR.
+
+## Acknowledgements
+* [Dennis Capone](https://github.com/dcap0)
