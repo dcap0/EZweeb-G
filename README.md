@@ -15,18 +15,21 @@ Windows
 `go build -o ./bin/${BINARY_NAME}.exe ./cmd/ezweeb/ezweeb.go`
 
 ## Binaries
-[GNU/Linux x64](https://mega.nz/file/w3BGTJAZ#oWeToZJTKwNaGhVNd-YSCX97cVoyIQHLur8Af2w23DE)
+[GNU/Linux x64](https://mega.nz/file/gnAjBYgK#8GNHQUGlkHV9O-9Gj6nFOloj9EJJvqLfcrBUZJ0VGkk)
 
-[GNU/Linux ARM](https://mega.nz/file/N3J3SIgD#n9DiCbOCP_hwKV1Cz14WNKQKShDclll8AfCnVYIeiME)
+[GNU/Linux ARM](https://mega.nz/file/QrRVgZYZ#9nYZmVbkSxgyY1-53yq_4kMqRkvGBxwjwIc7-MArAho)
 
-[Windows](https://mega.nz/file/Br5wHKAb#AoWBbMCfeN66Zuo1umWyGRg_8M7ZVlS_dVrTFi_niok)
+[Windows](https://mega.nz/file/BuZRDQYZ#SLtb2EhZkX0zXUwy8X5W2cjuRH1OfoWnH8DplfQi0qE)
 
-[MacOS x64](https://mega.nz/file/RnInmATT#FELKFoZ6um6l1jcUbJZzk0N-4vKms3HELB5hEi2fW00)
+[MacOS x64](https://mega.nz/file/p2YWnbgC#1etKGLsgdHLrlJ4_-L3vZReKQLIT6PHfU338-C8pjgU)
 
-[MacOS ARM](https://mega.nz/file/dqQVHKAB#Bc2f0ZdQVh1R01ls6y0hgP11voIqVmjLyrPr04TlakE)
+[MacOS ARM](https://mega.nz/file/puJnnKIQ#GxHPyyvbub5eEu24-b8tFvGw0sPOF3aKce6pgFo2S_0)
 
 
 ## Version Changes
+v1.1.1:
+ - Fixed imports
+
 v1.1.0:
  - Added a search function. It will now allow you to input a title and get results from Nyaa.
  - Added an option to change the safety level. Can use any or all:
