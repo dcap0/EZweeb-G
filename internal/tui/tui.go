@@ -27,6 +27,8 @@ const optionsReadoutData string = "Selected Year: %s Selected Season: %s Selecte
 
 var seriesData []data.Series = logic.GetSeriesHtml(currentOptions.Year, currentOptions.Season)
 
+var downloadMap map[string]string
+
 var app *tview.Application
 
 // InitUI takes a slice of Series structs,s
@@ -86,9 +88,10 @@ func InitUI() {
 			if showList.GetItemCount() > 0 {
 				switch input := event.Rune(); input {
 				case 13:
+					downloadMap = logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title, currentOptions.Quality, "", currentOptions.SafetyLevel)
 					populateDownloadList(
 						downloadList,
-						logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title, currentOptions.Quality, "", currentOptions.SafetyLevel),
+						downloadMap,
 					)
 					app.SetFocus(downloadList)
 				}
@@ -105,7 +108,6 @@ func InitUI() {
 			if event.Rune() == 13 { //enter key
 				//magnet link
 				selectedTorrent, _ := downloadList.GetItemText(downloadList.GetCurrentItem())
-				downloadMap := logic.GetSeriesDownloadLink(seriesData[showList.GetCurrentItem()].Title, currentOptions.Quality, "", currentOptions.SafetyLevel)
 				err := logic.OpenMagnet(downloadMap[selectedTorrent])
 				if err != nil {
 					modal := messageModalInit("An error occurred while opening the magnet link:\n" + err.Error()).
@@ -173,16 +175,12 @@ func InitUI() {
 		case 13:
 			if searchBar.GetTextLength() > 0 {
 				query := searchBar.GetText()
+				downloadMap = logic.GetSeriesDownloadLink(query, currentOptions.Quality, "", currentOptions.SafetyLevel)
 				populateDownloadList(
 					downloadList,
-					logic.
-						GetSeriesDownloadLink(
-							query,
-							currentOptions.Quality,
-							"",
-							currentOptions.SafetyLevel),
+					downloadMap,
 				)
-				descriptionText.Clear().SetText(fmt.Sprintf("Searched For: %s ~~", query))
+				descriptionText.Clear().SetText(fmt.Sprintf("~~Searched For: %s~~", query))
 			} else {
 				populateShowList(showList, seriesData)
 			}
