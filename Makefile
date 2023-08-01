@@ -18,11 +18,11 @@ ifeq ($(OS),Windows_NT)
 	@powershell "echo \"building for darwin-arm\"; go env -w GOOS=darwin; go env -w GOARCH=arm64; go build -o bin/${BINARY_NAME}_darwin-arm ./cmd/ezweeb/ezweeb.go; echo done"
 	@powershell "go env -w GOOS=windows; go env -w GOARCH=amd64"
 else
-	@echo "building for linux-amd";GOARCH=amd64 GOOS=linux go build -o bin/${BINARY_NAME}_linux-amd ./cmd/ezweeb/ezweeb.go; echo "done"
+	@echo "building for linux-amd";GOARCH=amd64 GOOS=linux go build -o bin/${BINARY_NAME}_linux-x64 ./cmd/ezweeb/ezweeb.go; echo "done"
 	@echo "building for linux-arm";GOARCH=arm64 GOOS=linux go build -o bin/${BINARY_NAME}_linux-arm ./cmd/ezweeb/ezweeb.go; echo "done"
-	@echo "building for darwin-amd";GOARCH=amd64 GOOS=darwin go build -o bin/${BINARY_NAME}_darwin-amd ./cmd/ezweeb/ezweeb.go; echo "done"
+	@echo "building for darwin-amd";GOARCH=amd64 GOOS=darwin go build -o bin/${BINARY_NAME}_darwin-x64 ./cmd/ezweeb/ezweeb.go; echo "done"
 	@echo "building for darwin-arm";GOARCH=arm64 GOOS=darwin go build -o bin/${BINARY_NAME}_darwin-arm ./cmd/ezweeb/ezweeb.go; echo "done"
-	@echo "building for windows";GOARCH=amd64 GOOS=windows go build -o bin/${BINARY_NAME}-windows ./cmd/ezweeb/ezweeb.go; echo "done"
+	@echo "building for windows";GOARCH=amd64 GOOS=windows go build -o bin/${BINARY_NAME}-windows.exe ./cmd/ezweeb/ezweeb.go; echo "done"
 endif
 
 
